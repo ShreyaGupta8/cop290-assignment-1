@@ -18,15 +18,8 @@ struct arguments
 };
 
 void* subtraction(void* args){
-
-	//struct arguments *arguments;
-	//arguments=(struct arguments *) args ;
-	arguments* argss=(arguments*) args;
-	//Mat ff, cf;
-	//int threadno;
-	//args->fixedFr_reqPart=ff;
-	//args->cropped_reqPart=cf;
-	//args->threadno=threadno;
+	
+	struct arguments *argss=(struct arguments *) argss ;
 
 	int pixelcount=0;
 
@@ -60,12 +53,12 @@ int main(int argc, char *argv[])
 	if (success){
 		
 		capture >> f;
-		waitKey(0);
+		//waitKey(0);
 	}
 	
-	Mat gray_img,dest_img, img;
+	Mat gray_img,dest_img;
 	cv::cvtColor(f, gray_img, cv::COLOR_BGR2GRAY);
-	dest_img=f.clone();
+	dest_img=gray_img.clone();
 
 	//defining size of frame
 	Size size(1920, 1080);
@@ -86,27 +79,26 @@ int main(int argc, char *argv[])
 
 	Mat hom1 = findHomography(source, destination);
 	warpPerspective(gray_img, dest_img, hom1, dest_img.size());
-	img=dest_img(crop_region);
-	imwrite("bgframe.jpeg", img);
-	Mat bg_frame = imread("bgframe.jpeg");
-
-	int wide=bg_frame.cols;
-	int high=bg_frame.rows;
-	int nWide= wide/4 ;
+	Mat img=dest_img(crop_region);
+	
+	int wide=img.cols;
+	int high=img.rows;
 	int nHigh= high/4 ;
 
 	vector<Rect> v;
 	vector<Mat> fixed;
 	
-	for (int y=0; y<= high - nHigh; y+=nHigh){
-		for (int x=0; x<= wide - nWide; x+=nWide){
-			int k=(x*y)+x+y;
-			Rect grid_rect(x,y,nWide,nHigh);
-			v.push_back(grid_rect);
-			Mat xframe=bg_frame.clone();
-			fixed.push_back(xframe(grid_rect));
-		}
+	for(int y=0; y<=high - nHigh; y+=nHigh){
+		Rect grid_rect(0, y, wide, nHigh);
+		v.push_back(grid_rect);
+		Mat xframe=img.clone();
+		fixed.push_back(xframe(grid_rect));
+		// imshow(format("grid%d", k), xframe(grid_rect));
+		// waitKey(0);
+
 	}
+
+	
 
 
 	VideoCapture cap("/home/shreya/Desktop/part2/trafficvideo.mp4");
@@ -144,25 +136,26 @@ int main(int argc, char *argv[])
 
 		int wide=croppedframe.cols;
 		int high=croppedframe.rows;
-		int nWide= wide/4 ;
 		int nHigh= high/4 ;
 
-
+		int k=0;
 		vector<Rect> v;
 		vector<Mat> cropped;
 		for (int y=0; y<= high - nHigh; y+=nHigh){
-			for (int x=0; x<= wide - nWide; x+=nWide){
-				int k=(x*y)+x+y;
-				Rect grid_rect(x,y,nWide,nHigh);
-				v.push_back(grid_rect);
-				Mat xframe=croppedframe.clone();
-				cropped.push_back(xframe(grid_rect));
-			}
+			k+=1;
+			Rect grid_rect(0,y,wide,nHigh);
+			v.push_back(grid_rect);
+			Mat xframe=croppedframe.clone();
+			cropped.push_back(xframe(grid_rect));
+			// imshow(format("cropped%d",k), xframe(grid_rect));
+			// waitKey(0);
+
+		
 		}
 
-		pthread_t th[16];
+		pthread_t th[4];
 		int i;
-		for (i=0; i<16; i++){
+		for (i=0; i<4; i++){
 			arguments args;
 			args.cropped_reqPart=cropped.at(i);
 			args.fixedFr_reqPart=fixed.at(i);
@@ -174,14 +167,14 @@ int main(int argc, char *argv[])
 
 		}
 
-		for (i=0; i<16; i++){
+		for (i=0; i<4; i++){
 			if(pthread_join(th[i], NULL)!=0){
 				perror("Thread not joined");
 			}
 		}
 
 		float global_qd;
-		for(i=0; i<16; i++){
+		for(i=0; i<4; i++){
 			global_qd+=part_density.at(i);
 		}
 		cout<< global_qd<< endl;
