@@ -8,7 +8,7 @@
 using namespace std;
 using namespace cv;
 
-vector<float> part_density;
+//vector<float> part_density;
 
 struct arguments
 {
@@ -17,23 +17,19 @@ struct arguments
 	int threadno;
 };
 
-void* subtraction(void* args){
+void* subtraction(void* argu){
 
-	//struct arguments *arguments;
-	arguments*=(arguments *) args ;
-	//Mat ff= args->fixedFr_reqPart ;
-	//Mat cf=args->cropped_reqPart;
-
+	struct arguments *argss=(struct arguments *)argu;
 	int pixelcount=0;
 
-	Mat queue_diff=args->cropped.clone();
+	Mat queue_diff=argss->cropped.clone();
 
-	for (int i = 0; i < args->fixedFr_reqPart.rows; i++)
+	for (int i = 0; i < argss->fixedFr.rows; i++)
 	{
-		for (int j = 0; j < args->fixedFr_reqPart.cols; j++)
+		for (int j = 0; j < argss->fixedFr.cols; j++)
 		{
 
-			uchar pixelval=abs(args->cropped_reqPart.at<uchar>(i, j) - args->fixedFr_reqPart.at<uchar>(i, j));
+			uchar pixelval=abs(argss->cropped.at<uchar>(i, j) - argss->fixedFr.at<uchar>(i, j));
 			queue_diff.at<uchar>(i, j) = pixelval;
 			if ((int)pixelval>20){
 				pixelcount++;
@@ -43,7 +39,7 @@ void* subtraction(void* args){
 	}
 	float queue_density;
 	queue_density = (float)pixelcount / (float)255184;
-	cout<<queue_density<<endl;
+	cout<<k<<queue_density<<endl;
 	
 }
 
@@ -62,7 +58,7 @@ int main(int argc, char *argv[])
 	Mat gray_img,dest_img, img;
 	cv::cvtColor(f, gray_img, cv::COLOR_BGR2GRAY);
 
-	dest_img=f.clone();
+	dest_img=gray_img.clone();
 
 	//defining size of frame
 	Size size(1920, 1080);
@@ -84,8 +80,6 @@ int main(int argc, char *argv[])
 	Mat hom1 = findHomography(source, destination);
 	warpPerspective(gray_img, dest_img, hom1, dest_img.size());
 	img=dest_img(crop_region);
-	imwrite("bgframe.jpeg", img);
-	Mat bg_frame = imread("bgframe.jpeg");
 
 	
 	VideoCapture cap("/home/shreya/Desktop/part2/trafficvideo.mp4");
@@ -128,10 +122,10 @@ int main(int argc, char *argv[])
 
 			arguments args;
 			args.cropped=croppedframe;
-			args.fixedFr=bg_frame;
+			args.fixedFr=img;
 			args.threadno=i;
 
-			if(pthread_create(&th[i], NULL, &subtraction, &i)!=0){
+			if(pthread_create(&th[i], NULL, &subtraction, &args)!=0){
 				perror("Thread not created");
 			}
 		}
