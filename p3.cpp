@@ -4,11 +4,12 @@
 #include <pthread.h>
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
 
 using namespace std;
 using namespace cv;
 
-vector<float> part_density;
+float part_density[4];
 
 struct arguments
 {
@@ -17,9 +18,9 @@ struct arguments
 	int threadno;
 };
 
-void* subtraction(void* args){
+void* subtraction(void* argu){
 	
-	struct arguments *argss=(struct arguments *) argss ;
+	struct arguments *argss=(struct arguments *) argu ;
 
 	int pixelcount=0;
 
@@ -40,7 +41,7 @@ void* subtraction(void* args){
 	}
 	float queue_density;
 	queue_density = (float)pixelcount / (float)255184;
-	part_density.at(argss->threadno)=queue_density;
+	part_density[argss->threadno]=queue_density;
 	return 0;
 }
 
@@ -104,6 +105,7 @@ int main(int argc, char *argv[])
 	VideoCapture cap("/home/shreya/Desktop/part2/trafficvideo.mp4");
 
 	while(1){
+
 		Mat frame;
 		cap >> frame;
 		
@@ -161,7 +163,7 @@ int main(int argc, char *argv[])
 			args.fixedFr_reqPart=fixed.at(i);
 			args.threadno=i;
 
-			if(pthread_create(&th[i], NULL, &subtraction, &i)!=0){
+			if(pthread_create(&th[i], NULL, &subtraction, &args)!=0){
 				perror("Thread not created");
 			}
 
@@ -174,10 +176,12 @@ int main(int argc, char *argv[])
 		}
 
 		float global_qd;
+
 		for(i=0; i<4; i++){
-			global_qd+=part_density.at(i);
+			global_qd+=part_density[i];
 		}
 		cout<< global_qd<< endl;
+		
 
 	}
 	cap.release();
