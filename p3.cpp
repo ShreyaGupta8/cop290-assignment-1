@@ -5,11 +5,12 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <time.h>
 
 using namespace std;
 using namespace cv;
 
-float part_density[4];
+vector<float> part_density;
 
 struct arguments
 {
@@ -20,9 +21,11 @@ struct arguments
 
 void* subtraction(void* argu){
 	
-	struct arguments *argss=(struct arguments *) argu ;
+	struct arguments *argss;
+	argss=(struct arguments *) argu ;
 
 	int pixelcount=0;
+	//cout<<argss->cropped_reqPart<<endl;
 
 	Mat queue_diff=argss->cropped_reqPart.clone();
 
@@ -41,12 +44,21 @@ void* subtraction(void* argu){
 	}
 	float queue_density;
 	queue_density = (float)pixelcount / (float)255184;
-	part_density[argss->threadno]=queue_density;
+	part_density.at(argss->threadno)=queue_density;
 	return 0;
 }
 
 int main(int argc, char *argv[])
 {
+	clock_t start, end;
+	double time;
+	start=clock();
+	int count=0;
+	part_density.push_back(0);
+	part_density.push_back(0);
+	part_density.push_back(0);
+	part_density.push_back(0);
+
 
 	VideoCapture capture("/home/shreya/Desktop/part2/trafficvideo.mp4");
 	bool success=capture.set(CAP_PROP_POS_FRAMES, 5190);
@@ -107,7 +119,11 @@ int main(int argc, char *argv[])
 	while(1){
 
 		Mat frame;
-		cap >> frame;
+		bool bSuccess = cap.read(frame);
+	
+		if(bSuccess==false){
+			break;
+		}
 		
 		Mat grayframe, dest_img;
 		cv::cvtColor(frame, grayframe, cv::COLOR_BGR2GRAY);
@@ -154,38 +170,41 @@ int main(int argc, char *argv[])
 
 		
 		}
+		struct arguments args[4];
+		
 
 		pthread_t th[4];
 		int i;
 		for (i=0; i<4; i++){
-			arguments args;
-			args.cropped_reqPart=cropped.at(i);
-			args.fixedFr_reqPart=fixed.at(i);
-			args.threadno=i;
+			
+			args[i].cropped_reqPart=cropped.at(i);
+			args[i].fixedFr_reqPart=fixed.at(i);
+			args[i].threadno=i;
+			//cout<<args[i].threadno<<endl;
 
-			if(pthread_create(&th[i], NULL, &subtraction, &args)!=0){
-				perror("Thread not created");
+			if(pthread_create(&th[i], NULL, subtraction, (void*) &args[i])!=0){
+				cerr<<"Thread not created"<<endl;
 			}
-
 		}
+
+
+		float global_qd=0.0;
+		
+
 
 		for (i=0; i<4; i++){
 			if(pthread_join(th[i], NULL)!=0){
-				perror("Thread not joined");
+				cerr<<"Thread not joined"<<endl;
 			}
+			global_qd+=part_density.at(i);
 		}
-
-		float global_qd;
-
-		for(i=0; i<4; i++){
-			global_qd+=part_density[i];
-		}
-		cout<< global_qd<< endl;
+		count++;
+		cout<<count<<" "<<global_qd<< endl;
 		
-
 	}
-	cap.release();
-	destroyAllWindows();
+	end=clock();
+	time=((double)(end-start))/ CLOCKS_PER_SEC;
+	cout<<"time taken: "<< time;
 
 	 return 0;
 }
