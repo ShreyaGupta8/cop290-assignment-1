@@ -4,11 +4,12 @@
 #include <pthread.h>
 #include <iostream>
 #include <fstream>
+#include <time.h>
 
 using namespace std;
 using namespace cv;
 
-//vector<float> part_density;
+float final_queue_density;
 
 struct arguments
 {
@@ -17,12 +18,17 @@ struct arguments
 	int threadno;
 };
 
-void* subtraction(void* argu){
 
-	struct arguments *argss=(struct arguments *)argu;
+
+void* subtraction(void* args){
+
+	struct arguments *argss=(struct arguments *)args;
 	int pixelcount=0;
+	
 
-	Mat queue_diff=argss->cropped.clone();
+	//cout<< argss->cropped<<endl;
+	
+	Mat queue_diff=abs(argss->cropped - argss->fixedFr);
 
 	for (int i = 0; i < argss->fixedFr.rows; i++)
 	{
@@ -37,14 +43,23 @@ void* subtraction(void* argu){
 
 		}
 	}
-	float queue_density;
-	queue_density = (float)pixelcount / (float)255184;
-	cout<<k<<queue_density<<endl;
+
+	
+	final_queue_density = (float)pixelcount / (float)255184;
+	cout<<final_queue_density<<endl;
+	
 	
 }
 
 int main(int argc, char *argv[])
 {
+	int tn;
+	cout<<"no. of threads to be used: ";
+	cin>>tn;
+
+	clock_t start, end;
+	double time;
+	start=clock();
 
 	VideoCapture capture("/home/shreya/Desktop/part2/trafficvideo.mp4");
 	bool success=capture.set(CAP_PROP_POS_FRAMES, 5190);
@@ -80,19 +95,34 @@ int main(int argc, char *argv[])
 	Mat hom1 = findHomography(source, destination);
 	warpPerspective(gray_img, dest_img, hom1, dest_img.size());
 	img=dest_img(crop_region);
+	// imshow("img", img);
+	// waitKey(0);
 
 	
 	VideoCapture cap("/home/shreya/Desktop/part2/trafficvideo.mp4");
+
 	
 	while(1){
+		
 
-		pthread_t th[10];
+		struct arguments args[tn];
+
+		pthread_t th[tn];
+		
 		int i;
+		Mat frame;
 
-		for(i=0; i<10; i++){
-			Mat frame;
-			cap >> frame;
+		for(i=0; i<tn; i++){
 			
+			//bool bSuccess=cap.read(frame);
+			cap>>frame;
+			
+			
+
+			if(frame.empty()==true){
+				break;
+			}
+
 			Mat grayframe, dest_img;
 			cv::cvtColor(frame, grayframe, cv::COLOR_BGR2GRAY);
 			
@@ -104,7 +134,7 @@ int main(int argc, char *argv[])
 			source.push_back(Point2f(1558, 1068));
 			source.push_back(Point2f(350, 1075));
 			//cloning destination frame
-			Mat destframe=frame.clone();
+			Mat destframe=grayframe.clone();
 			//Setting the 4 coordinates of the frame as the second set of points
 			std::vector<Point2f> destination;
 			destination.push_back(Point2f(472, 52));
@@ -119,24 +149,41 @@ int main(int argc, char *argv[])
 			Rect crop_region(472, 52, 328, 778);
 			//Cropped frame and image with the crop_region specified stored in croppedframe and img
 			Mat croppedframe = destframe(crop_region);
+			// imshow("cf", croppedframe);
+			// waitKey(0);
 
-			arguments args;
-			args.cropped=croppedframe;
-			args.fixedFr=img;
-			args.threadno=i;
+			
+			args[i].cropped=croppedframe;
+			args[i].fixedFr=img;
+			args[i].threadno=i;
 
-			if(pthread_create(&th[i], NULL, &subtraction, &args)!=0){
-				perror("Thread not created");
+			if(pthread_create(&th[i], NULL, &subtraction, (void*) &args[i])!=0){
+				cerr<<"Thread not created"<<endl;
 			}
+
+			
+			
 		}
 
-		for (i=0; i<10; i++){
-			if(pthread_join(th[i], NULL)!=0){
-				perror("Thread not joined");
+		
+		for (int j=0; j<i; j++){
+			if(pthread_join(th[j], NULL)!=0){
+				cerr<<"Thread not joined"<<endl;
 			}
+
+
 		}
+		if(frame.empty()==true){
+			break;
+		}
+
+		
+		
 
 	}
+	end=clock();
+	time=((double)(end-start))/ CLOCKS_PER_SEC;
+	cout<<"time taken: "<< time;
 
 	return 0;
 }
