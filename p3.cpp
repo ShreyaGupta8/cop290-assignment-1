@@ -12,6 +12,8 @@ using namespace cv;
 
 vector<float> part_density;
 
+
+
 struct arguments
 {
 	Mat fixedFr_reqPart;
@@ -50,14 +52,21 @@ void* subtraction(void* argu){
 
 int main(int argc, char *argv[])
 {
+	int tn;
+	cout<<"no. of threads to be used: ";
+	cin>>tn;
+
+	// std::ofstream Output;
+	// Output.open("m3-6.txt");
+
 	clock_t start, end;
 	double time;
 	start=clock();
-	int count=0;
-	part_density.push_back(0);
-	part_density.push_back(0);
-	part_density.push_back(0);
-	part_density.push_back(0);
+	
+	for(int p=0; p<tn; p++){
+		part_density.push_back(0);
+	}
+	
 
 
 	VideoCapture capture("/home/shreya/Desktop/part2/trafficvideo.mp4");
@@ -96,7 +105,7 @@ int main(int argc, char *argv[])
 	
 	int wide=img.cols;
 	int high=img.rows;
-	int nHigh= high/4 ;
+	int nHigh= high/tn ;
 
 	vector<Rect> v;
 	vector<Mat> fixed;
@@ -154,7 +163,7 @@ int main(int argc, char *argv[])
 
 		int wide=croppedframe.cols;
 		int high=croppedframe.rows;
-		int nHigh= high/4 ;
+		int nHigh= high/tn ;
 
 		int k=0;
 		vector<Rect> v;
@@ -170,12 +179,12 @@ int main(int argc, char *argv[])
 
 		
 		}
-		struct arguments args[4];
+		struct arguments args[tn];
 		
 
-		pthread_t th[4];
+		pthread_t th[tn];
 		int i;
-		for (i=0; i<4; i++){
+		for (i=0; i<tn; i++){
 			
 			args[i].cropped_reqPart=cropped.at(i);
 			args[i].fixedFr_reqPart=fixed.at(i);
@@ -192,16 +201,19 @@ int main(int argc, char *argv[])
 		
 
 
-		for (i=0; i<4; i++){
+		for (i=0; i<tn; i++){
 			if(pthread_join(th[i], NULL)!=0){
 				cerr<<"Thread not joined"<<endl;
 			}
 			global_qd+=part_density.at(i);
 		}
-		count++;
-		cout<<count<<" "<<global_qd<< endl;
+
+		cout<<global_qd<< endl;
+		// Output<<global_qd<<endl;
+
 		
 	}
+	//Output.close();
 	end=clock();
 	time=((double)(end-start))/ CLOCKS_PER_SEC;
 	cout<<"time taken: "<< time;
