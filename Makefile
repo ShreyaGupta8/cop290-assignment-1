@@ -3,3 +3,4 @@ all:
 	bash -c "g++ Method2.cpp -o method2 -std=c++11 `pkg-config --cflags --libs opencv`"
 	bash -c "g++ Method3.cpp -o method3 -lpthread `pkg-config --cflags --libs opencv`"
 	bash -c "g++ Method3.cpp -o method4 -lpthread `pkg-config --cflags --libs opencv`"
+	bash -c "g++ report.cpp -o report -std=c++11 `pkg-config --cflags --libs opencv`"
