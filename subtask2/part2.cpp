@@ -12,9 +12,9 @@ int main(int argc, char* argv[])
 	string video;
 	cout<<"path of video: ";
 	cin>> video;
-	clock_t start, end;
-	double time;
-	start=clock();
+// 	clock_t start, end;
+// 	double time;
+// 	start=clock();
 
 	VideoCapture cap(video);
 
@@ -120,48 +120,48 @@ int main(int argc, char* argv[])
 		queue_density = (float)pixelcount / (float)255184;
 
 		//frame to frame subtraction for dynamic density estimation
-		// if(count!=1){
-	 // 	Mat dynamic_diff=img.clone();
-		// 	for (int i = 0; i < croppedframe.rows; i++)
-		// 	{
-		// 		for (int j = 0; j < croppedframe.cols; j++)
-		// 		{
+		if(count!=1){
+	  		Mat dynamic_diff=img.clone();
+			for (int i = 0; i < croppedframe.rows; i++)
+			{
+				for (int j = 0; j < croppedframe.cols; j++)
+				{
 		
-		// 			uchar pixelval2=abs(croppedframe.at<uchar>(i, j) - grayframe2.at<uchar>(i, j));
-		// 			dynamic_diff.at<uchar>(i, j) = pixelval2;
-		//  			if ((int)pixelval2>10){
-		// 				pixelcount2++;
-		// 			}
-		// 		}
-		// 	}	
+					uchar pixelval2=abs(croppedframe.at<uchar>(i, j) - grayframe2.at<uchar>(i, j));
+					dynamic_diff.at<uchar>(i, j) = pixelval2;
+		 			if ((int)pixelval2>10){
+						pixelcount2++;
+					}
+				}
+			}	
 		
-		// 	//dynamic density calculation
-		// 	float dynamic_density;
-		// 	dynamic_density = (float)pixelcount2 / (float)255184;
+			//dynamic density calculation
+			float dynamic_density;
+			dynamic_density = (float)pixelcount2 / (float)255184;
 
-		// 	//printing time(in sec),queue density,dynamic density on console
-		// 	//Output  << (float)count/(float)15 << "," << queue_density<<","<<dynamic_density<<endl;
-		// 	cout<<(float)count/(float)15 << "," << queue_density<<","<<dynamic_density<<endl;
-		// 	//updating the frame so it saves the current frame and hence can be used in subtraction for dynamic densiy in the next iteration
-		// 	grayframe2=croppedframe.clone();
-		// }
-		// else{
-		// 	grayframe2=croppedframe.clone();
-		// cout<< (float)count/(float)15 << "," << queue_density<<","<< 0.0309541<<endl;
-		// 	//Output << (float)count/(float)15 << "," << queue_density<<","<< 0.0309541<<endl;
-		// }
+			//printing time(in sec),queue density,dynamic density on console
+			//Output  << (float)count/(float)15 << "," << queue_density<<","<<dynamic_density<<endl;
+			cout<<(float)count/(float)15 << "," << queue_density<<","<<dynamic_density<<endl;
+			//updating the frame so it saves the current frame and hence can be used in subtraction for dynamic densiy in the next iteration
+			grayframe2=croppedframe.clone();
+		}
+		else{
+			grayframe2=croppedframe.clone();
+		cout<< (float)count/(float)15 << "," << queue_density<<","<< 0.0309541<<endl;
+			//Output << (float)count/(float)15 << "," << queue_density<<","<< 0.0309541<<endl;
+		}
 
-		// //updating the count to keep a track of number of frames
-		// count++;
-		cout<<queue_density<<endl;
+		//updating the count to keep a track of number of frames
+		count++;
+
 
 	}
 
 	
 	//Output.close();
-	end=clock();
-	time=((double)(end-start))/ CLOCKS_PER_SEC;
-	cout<<"time taken: "<< time;
+// 	end=clock();
+// 	time=((double)(end-start))/ CLOCKS_PER_SEC;
+// 	cout<<"time taken: "<< time;
 
 	return 0;
 
