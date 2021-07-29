@@ -9,7 +9,7 @@ int main(int argc, char** argv){
 
 	ofstream subtracted;
 	subtracted.open("temp.txt");
-	ifstream baseline("out1.txt");
+	ifstream baseline("baseline.txt");
 	double bD, tbD;
 	ifstream ith("m3-10.txt");
 	double qD, error, utility;
